@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.temzu.cloud_storage.client.CloudStorageController">
+    <HBox fx:id="serverIndicator" spacing="5">
+
+    </HBox>
+    <HBox fx:id="loginPane" spacing="5">
+        <Label prefHeight="22.0" prefWidth="30.0" text="Login" HBox.hgrow="ALWAYS">
+
+        </Label>
+        <TextField fx:id="loginText" promptText="enter login" HBox.hgrow="ALWAYS">
+        </TextField>
+        <Label prefHeight="26.0" prefWidth="50.0" text="Password" HBox.hgrow="ALWAYS">
+
+        </Label>
+        <PasswordField fx:id="passText" onAction="#btnLoginOnAction" promptText="enter password" HBox.hgrow="ALWAYS">
+
+        </PasswordField>
+        <Button fx:id="btnLogin" onAction="#btnLoginOnAction" text="Log in" HBox.hgrow="ALWAYS">
+
+        </Button>
+        <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+        </padding>
+    </HBox>
+
+    <HBox VBox.vgrow="ALWAYS">
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <HBox spacing="5">
+                <TextField editable="false" visible="false" HBox.hgrow="ALWAYS">
+                </TextField>
+                <Button text="Вверх" visible="false" />
+            </HBox>
+
+            <TableView fx:id="listServerFiles" VBox.vgrow="ALWAYS">
+
+            </TableView>
+
+            <HBox spacing="5">
+                <Button fx:id="btnDownload" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Download" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnRename" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Rename" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnCloudDelete" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Delete" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+            </HBox>
+         <HBox.margin>
+            <Insets right="5.0" />
+         </HBox.margin>
+        </VBox>
+
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <HBox spacing="5">
+                <ComboBox fx:id="diskBox" onAction="#selectDiskOnAction">
+                </ComboBox>
+                <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS">
+                </TextField>
+                <Button onAction="#btnPathUpAction" text="Вверх" />
+            </HBox>
+
+            <TableView fx:id="listClientFiles" VBox.vgrow="ALWAYS">
+
+            </TableView>
+
+            <HBox spacing="5">
+                <Button fx:id="btnUpload" maxWidth="Infinity" onAction="#btnUploadOnAction" text="Upload" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnClientRename" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Rename" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnClientFileSystemDelete" maxWidth="Infinity" onAction="#btnDeleteClientOnAction" text="Delete" HBox.hgrow="ALWAYS" />
+            </HBox>
+         <HBox.margin>
+            <Insets left="5.0" />
+         </HBox.margin>
+
+        </VBox>
+        <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+        </padding>
+    </HBox>
+
+</VBox>
