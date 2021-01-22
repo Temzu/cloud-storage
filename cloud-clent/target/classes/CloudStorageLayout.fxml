@@ -2,18 +2,12 @@
 
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.effect.*?>
 <?import javafx.scene.layout.*?>
 
 <VBox prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.temzu.cloud_storage.client.CloudStorageController">
     <HBox fx:id="serverIndicator" spacing="5">
-      <children>
-         <CheckBox mnemonicParsing="false" text="CheckBox">
-            <effect>
-               <Bloom />
-            </effect>
-         </CheckBox>
-      </children></HBox>
+
+    </HBox>
     <HBox fx:id="loginPane" spacing="5">
         <Label prefHeight="22.0" prefWidth="30.0" text="Login" HBox.hgrow="ALWAYS">
 
