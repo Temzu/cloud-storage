@@ -14,18 +14,21 @@ import java.nio.file.Path;
 
 public class NettyNetwork {
 
+    private static final Logger LOG = LoggerFactory.getLogger(NettyNetwork.class);
+
     private final int PORT;
     private Path rootFolder;
+    private final AuthServerDb authServerDb;
 
-    private static final Logger LOG = LoggerFactory.getLogger(NettyNetwork.class);
 
     public NettyNetwork(int PORT, Path rootFolder) {
         this.PORT = PORT;
         this.rootFolder = rootFolder;
+        this.authServerDb = new AuthServerDb();
     }
 
     public void run() {
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
@@ -34,7 +37,7 @@ public class NettyNetwork {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new NettyClientHandler(rootFolder));
+                            ch.pipeline().addLast(new NettyClientHandler(rootFolder, authServerDb));
                         }
                     });
             ChannelFuture future = b.bind(PORT).sync();

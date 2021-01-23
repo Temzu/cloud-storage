@@ -12,9 +12,11 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(NettyClientHandler.class);
 
     private Path rootFolder;
+    private AuthServerDb authServerDb;
 
-    public NettyClientHandler(Path rootFolder) {
+    public NettyClientHandler(Path rootFolder, AuthServerDb authServerDb) {
         this.rootFolder = rootFolder;
+        this.authServerDb = authServerDb;
     }
 
     @Override
