@@ -11,6 +11,7 @@
     <modules>
         <module>cloud-clent</module>
         <module>cloud-server</module>
+        <module>core</module>
     </modules>
 
     <properties>
