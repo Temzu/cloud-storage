@@ -1,5 +1,6 @@
 package com.temzu.cloud_storage.server;
 
+import com.temzu.cloud_storage.server.entity.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
