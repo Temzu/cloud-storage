@@ -1,4 +1,4 @@
-package com.temzu.cloud_storage.server;
+package com.temzu.cloud_storage.server.entity;
 
 import javax.persistence.*;
 import java.io.Serializable;
