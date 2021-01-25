@@ -30,11 +30,6 @@
 
     <HBox VBox.vgrow="ALWAYS">
         <VBox spacing="5" HBox.hgrow="ALWAYS">
-            <HBox spacing="5">
-                <TextField editable="false" visible="false" HBox.hgrow="ALWAYS">
-                </TextField>
-                <Button text="Вверх" visible="false" />
-            </HBox>
 
             <TableView fx:id="listServerFiles" VBox.vgrow="ALWAYS">
 
@@ -51,13 +46,6 @@
         </VBox>
 
         <VBox spacing="5" HBox.hgrow="ALWAYS">
-            <HBox spacing="5">
-                <ComboBox fx:id="diskBox" onAction="#selectDiskOnAction">
-                </ComboBox>
-                <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS">
-                </TextField>
-                <Button onAction="#btnPathUpAction" text="Вверх" />
-            </HBox>
 
             <TableView fx:id="listClientFiles" VBox.vgrow="ALWAYS">
 

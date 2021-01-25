@@ -1,10 +1,14 @@
-package com.temzu.cloud_storage.server;
+package com.temzu.cloud_storage.server.entity;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 @Entity
-@Table(name = "users")
-public class User {
+@Table(
+        name = "users",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"login"})}
+)
+public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
