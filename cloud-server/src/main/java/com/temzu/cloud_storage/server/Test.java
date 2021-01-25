@@ -25,5 +25,8 @@ public class Test {
 //        System.out.println(log);
 //        System.out.println(a);
 
+//        AuthServerDb authServerDb = new AuthServerDb();
+//        System.out.println(authServerDb.authClient("Temzu", "1232"));
+
     }
 }

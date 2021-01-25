@@ -7,6 +7,7 @@ public enum Command {
     DEFAULT((byte) 0),
 
     AUTHORIZATION((byte) 1),
+    AUTHORIZATION_COMPLETED((byte) 2),
 
     DOWNLOAD_FILE((byte) 100),
 
