@@ -1,6 +1,7 @@
 package com.temzu.cloud_storage.util;
 
 
+import com.temzu.cloud_storage.callback.Callback;
 import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.operation.ProcessStatus;
 import io.netty.buffer.ByteBuf;
@@ -11,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 public class AuthUserUtil {
     private String login;
     private String password;
+
+    private Callback logInCallback;
 
     private int cmdLen = 1;
     private int otherLen = 4;
@@ -49,6 +52,16 @@ public class AuthUserUtil {
         ByteBuf buf = ByteBufAllocator.DEFAULT.directBuffer(otherLen);
         buf.writeByte(Command.AUTHORIZATION_COMPLETED.getOperationCode());
         return buf;
+    }
+
+    public void callLogIn() {
+        if (logInCallback != null) {
+            logInCallback.call();
+        }
+    }
+
+    public void setLogInCallback(Callback logInCallback) {
+        this.logInCallback = logInCallback;
     }
 
     public String getLogin() {
