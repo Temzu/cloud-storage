@@ -1,4 +1,4 @@
-package com.temzu.cloud_storage.server;
+package com.temzu.cloud_storage.server.storage;
 
 import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.operation.ProcessStatus;
@@ -31,7 +31,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
     private Command currentCommand = null;
     private ProcessStatus currentStatus = ProcessStatus.WAIT_BYTE;
 
-    public NettyClientHandler(Path rootFolder, ServerAuthDb serverAuthDb) {
+    public NettyClientHandler(Path rootFolder) {
         this.rootFolder = rootFolder;
         this.userService = new UserServiceImpl();
         this.authUserUtil = new AuthUserUtil();
@@ -62,30 +62,36 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
                 case AUTHORIZATION:
                     authClient(buf, ctx);
                     break;
+                case GET_FILES_LIST:
+                    getFilesList(buf, ctx);
+                    break;
+                case DOWNLOAD_FILE:
             }
 
-
+            currentStatus = ProcessStatus.WAIT_BYTE;
         }
     }
 
+    private void getFilesList(ByteBuf buf, ChannelHandlerContext ctx) {
+
+    }
+
     private void authClient(ByteBuf buf, ChannelHandlerContext ctx) throws IOException {
-        if (currentCommand == Command.AUTHORIZATION) {
-            LOG.debug("Client tries to log in");
-            currentStatus = authUserUtil.handleAuthData(buf, currentStatus);
-            currentStatus = userService.authClient(authUserUtil.getLogin(), authUserUtil.getPassword(), currentStatus);
+        LOG.debug("Client tries to log in...");
+        currentStatus = authUserUtil.handleAuthData(buf, currentStatus);
+        currentStatus = userService.authClient(authUserUtil.getLogin(), authUserUtil.getPassword(), currentStatus);
 
-            if (currentStatus == ProcessStatus.AUTH_SUCCESS) {
-                LOG.debug("Client " + authUserUtil.getLogin() + " logged in!");
-                isAuth = true;
-                Path userFolder = Paths.get(rootFolder.toString(), authUserUtil.getLogin());
-                if (!Files.exists(userFolder)) {
-                    Files.createDirectory(userFolder);
-                }
-
-                ctx.writeAndFlush(authUserUtil.completeAuth());
-            } else {
-                LOG.debug("Client " + authUserUtil.getLogin() + " was unable to connect to the server!");
+        if (currentStatus == ProcessStatus.AUTH_SUCCESS) {
+            LOG.debug("Client " + authUserUtil.getLogin() + " logged in!");
+            isAuth = true;
+            Path userFolder = Paths.get(rootFolder.toString(), authUserUtil.getLogin());
+            if (!Files.exists(userFolder)) {
+                Files.createDirectory(userFolder);
             }
+
+            ctx.writeAndFlush(authUserUtil.completeAuth());
+        } else {
+            LOG.debug("Client " + authUserUtil.getLogin() + " was unable to connect to the server!");
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.temzu.cloud_storage.server;
+package com.temzu.cloud_storage.server.storage;
 
 import com.temzu.cloud_storage.server.database.ServerAuthDb;
 import io.netty.bootstrap.ServerBootstrap;
@@ -19,13 +19,13 @@ public class NettyNetwork {
 
     private final int PORT;
     private Path rootFolder;
-    private final ServerAuthDb authServerAuthDb;
+    private final ServerAuthDb serverAuthDb;
 
 
     public NettyNetwork(int PORT, Path rootFolder) {
         this.PORT = PORT;
         this.rootFolder = rootFolder;
-        this.authServerAuthDb = new ServerAuthDb();
+        this.serverAuthDb = ServerAuthDb.getInstance();
     }
 
     public void run() {
@@ -38,7 +38,7 @@ public class NettyNetwork {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new NettyClientHandler(rootFolder, authServerAuthDb));
+                            ch.pipeline().addLast(new NettyClientHandler(rootFolder));
                         }
                     });
             ChannelFuture future = b.bind(PORT).sync();
@@ -47,6 +47,7 @@ public class NettyNetwork {
         } catch (InterruptedException e) {
             LOG.error("e=", e);
         } finally {
+            serverAuthDb.closeConnection();
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
         }

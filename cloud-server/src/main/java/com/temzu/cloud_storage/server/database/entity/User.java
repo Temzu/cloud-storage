@@ -1,4 +1,4 @@
-package com.temzu.cloud_storage.server.entity;
+package com.temzu.cloud_storage.server.database.entity;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,6 +28,7 @@ public class User implements Serializable {
     @Column(name = "login", nullable = false, unique = true)
     private String login;
 
+    @NonNull
     @Column(name = "password")
     private String password;
 }

@@ -1,7 +1,7 @@
-package com.temzu.cloud_storage.server;
+package com.temzu.cloud_storage.server.database;
 
 import com.temzu.cloud_storage.operation.ProcessStatus;
-import com.temzu.cloud_storage.server.entity.User;
+import com.temzu.cloud_storage.server.database.entity.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
@@ -12,11 +12,18 @@ public class ServerAuthDb {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerAuthDb.class);
 
+    private static ServerAuthDb serverAuthDb;
     private Session session;
     private final SessionFactory factory;
 
+    public static ServerAuthDb getInstance() {
+        if (serverAuthDb == null) {
+            serverAuthDb = new ServerAuthDb();
+        }
+        return serverAuthDb;
+    }
 
-    public ServerAuthDb() {
+    private ServerAuthDb() {
         factory = new Configuration()
                 .configure("hibernate.cfg.xml")
                 .addAnnotatedClass(User.class)
@@ -30,19 +37,12 @@ public class ServerAuthDb {
         session.close();
     }
 
-    public ProcessStatus authClient(String login, String password, ProcessStatus status) {
-        if (login.isEmpty() || status != ProcessStatus.AUTH_READY) {
-            return ProcessStatus.AUTH_NOT_READY;
-        }
-        session = factory.getCurrentSession();
-        session.beginTransaction();
-        User user = (User) session
-                .createQuery("from User u where u.login = :login and u.password = :password")
-                .setParameter("login", login).setParameter("password", password).getSingleResult();
-        session.getTransaction().commit();
-
-        return user != null ? ProcessStatus.AUTH_SUCCESS : ProcessStatus.AUTH_ERROR;
+    public Session getSession() {
+        return factory.getCurrentSession();
     }
+
+
+
 
 //    public static void main(String[] args) {
 //        SessionFactory factory = new Configuration()
