@@ -20,15 +20,15 @@ public class NetworkClient {
 
     private String serverName;
     private int serverPort;
-    private FileTransfer fileTransfer;
     private AuthUserUtil authUserUtil;
     private Channel currentChannel;
+    private FileTransfer fileTransfer;
 
     public NetworkClient(String serverName, int serverPort) {
         this.serverName = serverName;
         this.serverPort = serverPort;
-        fileTransfer = new FileTransfer();
         authUserUtil = new AuthUserUtil();
+        fileTransfer = new FileTransfer();
         new Thread(() -> start()).start();
     }
 
@@ -43,7 +43,7 @@ public class NetworkClient {
                         protected void initChannel(SocketChannel socketChannel) {
                             currentChannel = socketChannel;
                             System.out.println(currentChannel);
-                            socketChannel.pipeline().addLast(new ServerHandler(fileTransfer, authUserUtil));
+                            socketChannel.pipeline().addLast(new ServerHandler(authUserUtil, fileTransfer));
                         }
                     });
             ChannelFuture channelFuture = clientBootstrap.connect().sync();
@@ -59,15 +59,15 @@ public class NetworkClient {
         currentChannel.close();
     }
 
-    public FileTransfer getFileTransfer() {
-        return fileTransfer;
-    }
-
     public AuthUserUtil getAuthUserUtil() {
         return authUserUtil;
     }
 
     public Channel getCurrentChannel() {
         return currentChannel;
+    }
+
+    public FileTransfer getFileTransfer() {
+        return fileTransfer;
     }
 }

@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.temzu.cloud_storage.client.controller.Controller">
+<VBox prefHeight="400.0" prefWidth="600.0" stylesheets="style.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.temzu.cloud_storage.client.controller.Controller">
     <HBox fx:id="serverIndicator" spacing="5">
 
     </HBox>
@@ -29,12 +29,10 @@
     <HBox VBox.vgrow="ALWAYS">
         <VBox spacing="5" HBox.hgrow="ALWAYS">
 
-            <TableView fx:id="listServerFiles" VBox.vgrow="ALWAYS">
-
-            </TableView>
+            <ListView fx:id="serverFilesList" onMouseClicked="#filesListClicked" VBox.vgrow="ALWAYS" />
 
             <HBox spacing="5">
-                <Button fx:id="btnDownload" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Download" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnDownload" maxWidth="Infinity" onAction="#btnDownloadFromServer" text="Download" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
                 <Button fx:id="btnRename" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Rename" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
                 <Button fx:id="btnCloudDelete" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Delete" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
             </HBox>
@@ -44,10 +42,8 @@
         </VBox>
 
         <VBox spacing="5" HBox.hgrow="ALWAYS">
-
-            <TableView fx:id="clientFilesList" onMouseClicked="#msossldf" VBox.vgrow="ALWAYS">
-
-            </TableView>
+            <TextField fx:id="clientPathField" editable="false" focusTraversable="false" />
+            <ListView fx:id="clientFilesList" onMouseClicked="#filesListClicked" VBox.vgrow="ALWAYS" />
 
             <HBox spacing="5">
                 <Button fx:id="btnUpload" maxWidth="Infinity" onAction="#btnUploadOnAction" text="Upload" textAlignment="CENTER" HBox.hgrow="ALWAYS" />

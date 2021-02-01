@@ -1,6 +1,5 @@
 package com.temzu.cloud_storage.client.network;
 
-import com.temzu.cloud_storage.client.controller.Controller;
 import com.temzu.cloud_storage.file.FileTransfer;
 import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.operation.ProcessStatus;
@@ -11,6 +10,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerHandler.class);
@@ -20,26 +21,49 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     private Command currentCommand = Command.DEFAULT;
     private ProcessStatus processStatus = ProcessStatus.WAIT_BYTE;
 
-    public ServerHandler(FileTransfer fileTransfer, AuthUserUtil authUserUtil) {
-        this.fileTransfer = fileTransfer;
+    public ServerHandler(AuthUserUtil authUserUtil, FileTransfer fileTransfer) {
         this.authUserUtil = authUserUtil;
+        this.fileTransfer = fileTransfer;
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-
         while (buf.readableBytes() > 0) {
             if (processStatus == ProcessStatus.WAIT_BYTE) {
                 currentCommand = Command.defineCommand(buf.readByte());
-
+                processStatus = ProcessStatus.defineProcess(currentCommand);
+                System.out.println(currentCommand.getOperationCode());
                 switch (currentCommand) {
                     case AUTHORIZATION_COMPLETED:
                         authUserUtil.callLogIn();
                         LOG.debug("Authorization successful!");
                         break;
+                    case SEND_FILES_LIST:
+                        processStatus = fileTransfer.returnFilesList(buf, processStatus);
+                        break;
+                    case DOWNLOAD_FILE_SUCCESS:
+                        processStatus = fileTransfer.readFileParameters(buf, processStatus);
+                        break;
                 }
             }
+            if (currentCommand == Command.DOWNLOAD_FILE_SUCCESS) {
+                processStatus = fileTransfer.readFile(buf, processStatus);
+            }
+        }
+
+
+
+        if (buf.readableBytes() == 0) {
+            buf.release();
+        }
+    }
+
+    private void downloadFile(ByteBuf buf) {
+        try {
+            fileTransfer.readFile(buf, processStatus);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

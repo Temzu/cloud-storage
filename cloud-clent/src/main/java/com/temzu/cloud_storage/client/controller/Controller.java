@@ -1,7 +1,9 @@
 package com.temzu.cloud_storage.client.controller;
 
 import com.temzu.cloud_storage.client.network.NetworkClient;
+import com.temzu.cloud_storage.file.FileInfo;
 import com.temzu.cloud_storage.file.FileTransfer;
+import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.util.AuthUserUtil;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -9,11 +11,14 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -24,6 +29,8 @@ public class Controller implements Initializable {
     private NetworkClient networkClient;
     private FileTransfer fileTransfer;
     private AuthUserUtil authUserUtil;
+    private Path currentFolder;
+    private FileController fileController;
 
     @FXML
     private Button btnLogin;
@@ -35,15 +42,23 @@ public class Controller implements Initializable {
     private PasswordField passText;
 
     @FXML
-    private HBox loginPane;
+    private TextField clientPathField;
 
     @FXML
-    private TableView clientFilesList;
+    private ListView<FileInfo> clientFilesList;
+
+    @FXML
+    private ListView<String> serverFilesList;
+
 
 
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        currentFolder = Paths.get(File.listRoots()[1].getAbsolutePath());
+
+        fileController = new FileController(currentFolder);
+        fileController.fillClientCells(clientFilesList, clientPathField);
         networkClient = new NetworkClient("localhost", 8189);
         authUserUtil = networkClient.getAuthUserUtil();
         fileTransfer = networkClient.getFileTransfer();
@@ -53,8 +68,24 @@ public class Controller implements Initializable {
                 btnLogin.setText("Log out");
                 loginText.setDisable(true);
                 passText.setDisable(true);
+                getFileListServer();
             });
         });
+
+        fileTransfer.setGetFileListCallBack(args -> {
+            Platform.runLater(()->{
+                List<String> filesList = (List<String>) args[0];
+                serverFilesList.getItems().clear();
+                serverFilesList.getItems().addAll(filesList);
+            });
+        });
+
+
+
+    }
+
+    private void getFileListServer(){
+        networkClient.getCurrentChannel().writeAndFlush(fileTransfer.requestFileList(new String()));
     }
 
     private void showMessage(Alert.AlertType type, String title, String message){
@@ -86,6 +117,7 @@ public class Controller implements Initializable {
     }
 
     public void btnDownloadOnAction(ActionEvent actionEvent) {
+
     }
 
     public void btnUploadOnAction(ActionEvent actionEvent) {
@@ -106,7 +138,14 @@ public class Controller implements Initializable {
     public void btnDeleteCloudOnAction(ActionEvent actionEvent) {
     }
 
-    public void msossldf(MouseEvent mouseEvent) {
+    public void filesListClicked(MouseEvent mouseEvent) {
+        fileController.filesListClicked(mouseEvent, clientFilesList, clientPathField);
+    }
 
+    public void btnDownloadFromServer(ActionEvent actionEvent) {
+        fileTransfer.setCurrentFolder(currentFolder.toAbsolutePath().toString());
+        String downLoadFile = serverFilesList.getFocusModel().getFocusedItem();
+        System.out.println(downLoadFile);
+        networkClient.getCurrentChannel().writeAndFlush(fileTransfer.sendSomeMessage(downLoadFile, Command.DOWNLOAD_FILE));
     }
 }

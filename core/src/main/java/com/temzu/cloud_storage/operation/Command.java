@@ -10,8 +10,10 @@ public enum Command {
     AUTHORIZATION_COMPLETED((byte) 2),
 
     GET_FILES_LIST((byte) 10),
+    SEND_FILES_LIST((byte) 11),
 
     DOWNLOAD_FILE((byte) 100),
+    DOWNLOAD_FILE_SUCCESS((byte) 101),
 
     UPLOAD_FILE((byte) 150),
 

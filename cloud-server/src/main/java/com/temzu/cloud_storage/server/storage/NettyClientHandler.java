@@ -1,8 +1,8 @@
 package com.temzu.cloud_storage.server.storage;
 
+import com.temzu.cloud_storage.file.FileTransfer;
 import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.operation.ProcessStatus;
-import com.temzu.cloud_storage.server.database.ServerAuthDb;
 import com.temzu.cloud_storage.server.database.service.UserService;
 import com.temzu.cloud_storage.server.database.service.UserServiceImpl;
 import com.temzu.cloud_storage.util.AuthUserUtil;
@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 
 public class NettyClientHandler extends ChannelInboundHandlerAdapter {
 
@@ -27,6 +28,8 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
 
     private UserService userService;
     private AuthUserUtil authUserUtil;
+    private FileTransfer fileTransfer;
+    private Path userFolder;
 
     private Command currentCommand = null;
     private ProcessStatus currentStatus = ProcessStatus.WAIT_BYTE;
@@ -35,6 +38,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
         this.rootFolder = rootFolder;
         this.userService = new UserServiceImpl();
         this.authUserUtil = new AuthUserUtil();
+        this.fileTransfer = new FileTransfer();
         isAuth = false;
     }
 
@@ -63,17 +67,18 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
                     authClient(buf, ctx);
                     break;
                 case GET_FILES_LIST:
-                    getFilesList(buf, ctx);
+                    getFilesList(ctx);
                     break;
                 case DOWNLOAD_FILE:
+                    sendFile(buf, ctx);
+                    break;
             }
 
             currentStatus = ProcessStatus.WAIT_BYTE;
         }
-    }
-
-    private void getFilesList(ByteBuf buf, ChannelHandlerContext ctx) {
-
+        if (buf.readableBytes() == 0) {
+            buf.release();
+        }
     }
 
     private void authClient(ByteBuf buf, ChannelHandlerContext ctx) throws IOException {
@@ -84,7 +89,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
         if (currentStatus == ProcessStatus.AUTH_SUCCESS) {
             LOG.debug("Client " + authUserUtil.getLogin() + " logged in!");
             isAuth = true;
-            Path userFolder = Paths.get(rootFolder.toString(), authUserUtil.getLogin());
+            userFolder = Paths.get(rootFolder.toString(), authUserUtil.getLogin());
             if (!Files.exists(userFolder)) {
                 Files.createDirectory(userFolder);
             }
@@ -92,6 +97,31 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
             ctx.writeAndFlush(authUserUtil.completeAuth());
         } else {
             LOG.debug("Client " + authUserUtil.getLogin() + " was unable to connect to the server!");
+        }
+    }
+
+    private void getFilesList(ChannelHandlerContext ctx) {
+        if (isAuth) {
+            LOG.debug("Client tries to get files list...");
+            String filesList = null;
+            try {
+                filesList = Files.list(userFolder)
+                        .map((f) -> f.getFileName().toString())
+                        .collect(Collectors.joining("/", "", ""));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            fileTransfer.setCurrentFolder(userFolder.toString());
+            ctx.writeAndFlush(fileTransfer.sendSomeMessage(filesList, Command.SEND_FILES_LIST));
+            LOG.debug("Files list sent to client!");
+        }
+    }
+
+    private void sendFile(ByteBuf buf, ChannelHandlerContext ctx) {
+        currentStatus = fileTransfer.readFileName(buf);
+        if (currentStatus == ProcessStatus.READ_FILE_READY) {
+            ctx.writeAndFlush(fileTransfer.sendFileParameters());
+            fileTransfer.sendFile(ctx.channel());
         }
     }
 }

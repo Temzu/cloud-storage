@@ -2,3 +2,23 @@
 .idea/misc.xml
 
 .idea/uiDesigner.xml
+
+cloud-server/target/classes/root_folder/Temzu/file.txt
+
+cloud-server/target/classes/root_folder/Temzu/file2.txt
+
+cloud-server/target/classes/root_folder/Temzu/Скриншот 30-01-2021 17_45_56.jpg
+
+cloud-server/target/classes/root_folder/Temzu/ideaIU-2020.3.1.exe
+
+cloud-server/target/classes/root_folder/Temzu/certificate.pdf
+
+cloud-server/src/main/resources/root_folder/Temzu/certificate.pdf
+
+cloud-server/src/main/resources/root_folder/Temzu/file.txt
+
+cloud-server/src/main/resources/root_folder/Temzu/file2.txt
+
+cloud-server/src/main/resources/root_folder/Temzu/ideaIU-2020.3.1.exe
+
+cloud-server/src/main/resources/root_folder/Temzu/Скриншот 30-01-2021 17_45_56.jpg
