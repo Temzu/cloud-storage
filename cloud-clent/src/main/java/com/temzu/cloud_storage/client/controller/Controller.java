@@ -5,6 +5,7 @@ import com.temzu.cloud_storage.file.FileInfo;
 import com.temzu.cloud_storage.file.FileTransfer;
 import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.util.AuthUserUtil;
+import io.netty.buffer.ByteBuf;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -50,9 +51,6 @@ public class Controller implements Initializable {
     @FXML
     private ListView<String> serverFilesList;
 
-
-
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         currentFolder = Paths.get(File.listRoots()[1].getAbsolutePath());
@@ -63,24 +61,7 @@ public class Controller implements Initializable {
         authUserUtil = networkClient.getAuthUserUtil();
         fileTransfer = networkClient.getFileTransfer();
 
-        authUserUtil.setLogInCallback(objects -> {
-            Platform.runLater(() -> {
-                btnLogin.setText("Log out");
-                loginText.setDisable(true);
-                passText.setDisable(true);
-                getFileListServer();
-            });
-        });
-
-        fileTransfer.setGetFileListCallBack(args -> {
-            Platform.runLater(()->{
-                List<String> filesList = (List<String>) args[0];
-                serverFilesList.getItems().clear();
-                serverFilesList.getItems().addAll(filesList);
-            });
-        });
-
-
+        initCallBack();
 
     }
 
@@ -110,6 +91,33 @@ public class Controller implements Initializable {
         LOG.debug("Attempt to authorize...");
     }
 
+    private void initCallBack() {
+
+        authUserUtil.setLogInCallback(objects -> {
+            Platform.runLater(() -> {
+                btnLogin.setText("Log out");
+                loginText.setDisable(true);
+                passText.setDisable(true);
+                getFileListServer();
+            });
+        });
+
+        fileTransfer.setGetFileListCallBack(args -> {
+            Platform.runLater(()->{
+                List<String> filesList = (List<String>) args[0];
+                serverFilesList.getItems().clear();
+                serverFilesList.getItems().addAll(filesList);
+            });
+        });
+
+        fileTransfer.setDownloadFileCallback(args -> {
+            Platform.runLater(() -> {
+                fileController.refresh(clientFilesList, clientPathField);
+            });
+        });
+
+    }
+
     public void btnDeleteOnAction(ActionEvent actionEvent) {
     }
 
@@ -121,6 +129,13 @@ public class Controller implements Initializable {
     }
 
     public void btnUploadOnAction(ActionEvent actionEvent) {
+        fileTransfer.setCurrentFolder(currentFolder.toString());
+        ByteBuf buff = fileTransfer.requestUploadFile(clientFilesList.getFocusModel().getFocusedItem().getFileName());
+        if(buff == null){
+            return;
+        }
+        networkClient.getCurrentChannel().writeAndFlush(buff);
+        new Thread(()->{fileTransfer.sendFile(networkClient.getCurrentChannel());}).start();
     }
 
     public void selectDiskOnAction(ActionEvent actionEvent) {
@@ -139,7 +154,7 @@ public class Controller implements Initializable {
     }
 
     public void filesListClicked(MouseEvent mouseEvent) {
-        fileController.filesListClicked(mouseEvent, clientFilesList, clientPathField);
+        currentFolder = fileController.filesListClicked(mouseEvent, clientFilesList, clientPathField);
     }
 
     public void btnDownloadFromServer(ActionEvent actionEvent) {

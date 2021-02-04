@@ -31,6 +31,7 @@ public enum ProcessStatus {
             case DOWNLOAD_FILE:
                 return ProcessStatus.READ_FILE;
             case DOWNLOAD_FILE_SUCCESS:
+            case UPLOAD_FILE:
                 return ProcessStatus.START_DOWNLOAD_PROCESS;
         }
         return ProcessStatus.WAIT_BYTE;

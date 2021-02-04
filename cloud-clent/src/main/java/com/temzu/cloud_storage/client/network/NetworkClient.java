@@ -29,7 +29,9 @@ public class NetworkClient {
         this.serverPort = serverPort;
         authUserUtil = new AuthUserUtil();
         fileTransfer = new FileTransfer();
-        new Thread(() -> start()).start();
+        Thread t = new Thread(this::start);
+        t.setDaemon(true);
+        t.start();
     }
 
     public void start() {
@@ -42,15 +44,17 @@ public class NetworkClient {
                     .handler(new ChannelInitializer<SocketChannel>() {
                         protected void initChannel(SocketChannel socketChannel) {
                             currentChannel = socketChannel;
-                            System.out.println(currentChannel);
                             socketChannel.pipeline().addLast(new ServerHandler(authUserUtil, fileTransfer));
                         }
                     });
             ChannelFuture channelFuture = clientBootstrap.connect().sync();
+            LOG.debug("Connection to server is successful");
             channelFuture.channel().closeFuture().sync();
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("e = " + e);
         } finally {
+            LOG.debug("Close connection.");
+            closeConnection();
             group.shutdownGracefully();
         }
     }

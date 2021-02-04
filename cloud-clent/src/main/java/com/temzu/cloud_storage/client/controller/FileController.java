@@ -54,6 +54,7 @@ public class FileController {
 
     private void goToPath(Path path, ListView<FileInfo> filesList, TextField pathField) {
         clientRootPath = path;
+        System.out.println(clientRootPath.toString());
         pathField.setText(clientRootPath.toAbsolutePath().toString());
         filesList.getItems().clear();
         filesList.getItems().addAll(new FileInfo(FileInfo.UP_TOKEN, -2L));
@@ -81,7 +82,11 @@ public class FileController {
         }
     }
 
-    public void filesListClicked(MouseEvent mouseEvent, ListView<FileInfo> filesList, TextField pathField) {
+    public void refresh(ListView<FileInfo> filesList, TextField pathField) {
+        goToPath(clientRootPath, filesList, pathField);
+    }
+
+    public Path filesListClicked(MouseEvent mouseEvent, ListView<FileInfo> filesList, TextField pathField) {
         if (mouseEvent.getClickCount() == 2) {
             FileInfo fileInfo = filesList.getSelectionModel().getSelectedItem();
             if (fileInfo != null) {
@@ -95,5 +100,6 @@ public class FileController {
                 }
             }
         }
+        return clientRootPath;
     }
 }

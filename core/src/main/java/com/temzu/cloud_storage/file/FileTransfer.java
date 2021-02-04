@@ -6,6 +6,8 @@ import com.temzu.cloud_storage.operation.ProcessStatus;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class FileTransfer {
+    private static final Logger LOG = LoggerFactory.getLogger(FileTransfer.class);
 
     private long fileLength;
 
@@ -43,6 +46,7 @@ public class FileTransfer {
     private Callback downloadFileCallback;
 
     public ByteBuf sendSomeMessage(String message, Command command) {
+        LOG.debug("Send message: " + command.toString() + " " + message);
         byte[] bytesMessage = message.getBytes(StandardCharsets.UTF_8);
         ByteBuf buf = ByteBufAllocator.DEFAULT.directBuffer(CMD_BYTE_LENGTH + FILE_NAME_LENGTH + bytesMessage.length);
         buf.writeByte(command.getOperationCode());
@@ -55,14 +59,16 @@ public class FileTransfer {
         return sendSomeMessage(directoryName, Command.GET_FILES_LIST);
     }
 
-    public ProcessStatus returnFilesList(ByteBuf buf, ProcessStatus status) {
+    public ProcessStatus takeFileList(ByteBuf buf, ProcessStatus status) {
         if (status == ProcessStatus.GET_FILES_LIST) {
+            LOG.debug("Take files list from server");
             int len = buf.readInt();
             byte[] filesByte = new byte[len];
             buf.readBytes(filesByte);
             List<String> filesList = Arrays.stream(new String(filesByte, StandardCharsets.UTF_8).split("/"))
                     .collect(Collectors.toCollection(ArrayList::new));
             getFileListCallBack.call(filesList);
+            LOG.debug("Files list: " + filesList);
             status = ProcessStatus.WAIT_BYTE;
         }
         System.out.println(status.toString());
@@ -72,6 +78,7 @@ public class FileTransfer {
     public ProcessStatus readFileName(ByteBuf buf) {
         ProcessStatus status;
         try {
+            LOG.debug("Read file name...");
             int len = buf.readInt();
             byte[] filesByte = new byte[len];
             buf.readBytes(filesByte);
@@ -79,7 +86,10 @@ public class FileTransfer {
             downloadFile = Paths.get(currentFolder, currentFilename);
             fileLength = Files.size(downloadFile);
             status =  ProcessStatus.READ_FILE_READY;
+            LOG.debug("File name is \"" + currentFilename + "\"" );
+
         } catch (IOException e) {
+            LOG.error("e = " + e);
             status =  ProcessStatus.READ_FILE_ERROR;
         }
         return status;
@@ -123,13 +133,13 @@ public class FileTransfer {
     public void sendFile(Channel channel) {
         try {
             ByteBuf answer;
-            ByteBuffer bufRead = ByteBuffer.allocate(1024);
+            ByteBuffer bufRead = ByteBuffer.allocate(32000);
             int bytesRead = fChannel.read(bufRead);
             countBytes = countBytes + bytesRead;
 
             while (bytesRead != -1 && countBytes <= fileLength) {
 
-                answer = ByteBufAllocator.DEFAULT.directBuffer(1024, 5*1024);
+                answer = ByteBufAllocator.DEFAULT.directBuffer(32000);
 
                 bufRead.flip();
                 while(bufRead.hasRemaining()){
@@ -171,6 +181,9 @@ public class FileTransfer {
                 buf.readerIndex(buf.readerIndex() + tempCount);
             }
             if (countBytes == fileLength) {
+                if (downloadFileCallback != null) {
+                    downloadFileCallback.call();
+                }
                 processStatus = ProcessStatus.WAIT_BYTE;
                 raf.close();
             }
@@ -178,11 +191,42 @@ public class FileTransfer {
         return processStatus;
     }
 
+    public void setCurrentFolder(String currentFolder) {
+        this.currentFolder = currentFolder;
+    }
+
     public void setGetFileListCallBack(Callback getFileListCallBack) {
         this.getFileListCallBack = getFileListCallBack;
     }
 
-    public void setCurrentFolder(String currentFolder) {
-        this.currentFolder = currentFolder;
+    public void setDownloadFileCallback(Callback downloadFileCallback) {
+        this.downloadFileCallback = downloadFileCallback;
+    }
+
+    public ByteBuf requestUploadFile(String fileName) {
+        currentFilename = fileName;
+        uploadFile = Paths.get(currentFolder, currentFilename);
+        System.out.println(uploadFile.toString());
+        try {
+            fileLength = Files.size(uploadFile);
+        } catch (IOException e) {
+            LOG.error("Error determining file size: e = " + e);
+            return null;
+        }
+        byte[] fileNameBytes = uploadFile.getFileName().toString().getBytes(StandardCharsets.UTF_8);
+        ByteBuf buff = ByteBufAllocator.DEFAULT.directBuffer(CMD_BYTE_LENGTH + FILE_NAME_LENGTH + fileNameBytes.length + FILE_LENGTH);
+        buff.writeByte(Command.UPLOAD_FILE.getOperationCode());
+        buff.writeInt(fileNameBytes.length);
+        buff.writeBytes(fileNameBytes);
+        buff.writeLong(fileLength);
+        try {
+            raf = new RandomAccessFile(uploadFile.toFile(), "r");
+            fChannel = raf.getChannel();
+            countBytes = 0l;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return buff;
     }
 }

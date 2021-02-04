@@ -4,13 +4,13 @@ import com.temzu.cloud_storage.file.FileTransfer;
 import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.operation.ProcessStatus;
 import com.temzu.cloud_storage.util.AuthUserUtil;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -33,14 +33,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             if (processStatus == ProcessStatus.WAIT_BYTE) {
                 currentCommand = Command.defineCommand(buf.readByte());
                 processStatus = ProcessStatus.defineProcess(currentCommand);
-                System.out.println(currentCommand.getOperationCode());
                 switch (currentCommand) {
                     case AUTHORIZATION_COMPLETED:
                         authUserUtil.callLogIn();
                         LOG.debug("Authorization successful!");
                         break;
                     case SEND_FILES_LIST:
-                        processStatus = fileTransfer.returnFilesList(buf, processStatus);
+                        processStatus = fileTransfer.takeFileList(buf, processStatus);
                         break;
                     case DOWNLOAD_FILE_SUCCESS:
                         processStatus = fileTransfer.readFileParameters(buf, processStatus);
@@ -52,23 +51,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             }
         }
 
-
-
         if (buf.readableBytes() == 0) {
             buf.release();
         }
     }
 
-    private void downloadFile(ByteBuf buf) {
-        try {
-            fileTransfer.readFile(buf, processStatus);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
+        ctx.close();
     }
 }

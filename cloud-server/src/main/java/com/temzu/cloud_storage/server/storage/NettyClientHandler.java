@@ -32,7 +32,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
     private Path userFolder;
 
     private Command currentCommand = null;
-    private ProcessStatus currentStatus = ProcessStatus.WAIT_BYTE;
+    private ProcessStatus processStatus = ProcessStatus.WAIT_BYTE;
 
     public NettyClientHandler(Path rootFolder) {
         this.rootFolder = rootFolder;
@@ -57,50 +57,62 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
         ByteBuf buf = (ByteBuf) msg;
         LOG.debug("Client byte");
         while (buf.readableBytes() > 0) {
-            if (currentStatus == ProcessStatus.WAIT_BYTE) {
+            if (processStatus == ProcessStatus.WAIT_BYTE) {
                 currentCommand = Command.defineCommand(buf.readByte());
-                currentStatus = ProcessStatus.defineProcess(currentCommand);
+                processStatus = ProcessStatus.defineProcess(currentCommand);
+
+                switch (currentCommand) {
+                    case AUTHORIZATION:
+                        processStatus = authClient(buf, ctx, processStatus);
+                        break;
+                    case GET_FILES_LIST:
+                        processStatus = getFilesList(ctx, processStatus);
+                        break;
+                    case DOWNLOAD_FILE:
+                        sendFile(buf, ctx);
+                        break;
+                    case UPLOAD_FILE:
+                        System.out.println("Upload: " + processStatus.toString() + " " + currentCommand.toString());
+                        processStatus = fileTransfer.readFileParameters(buf, processStatus);
+                        break;
+                }
             }
 
-            switch (currentCommand) {
-                case AUTHORIZATION:
-                    authClient(buf, ctx);
-                    break;
-                case GET_FILES_LIST:
-                    getFilesList(ctx);
-                    break;
-                case DOWNLOAD_FILE:
-                    sendFile(buf, ctx);
-                    break;
+            if (currentCommand == Command.UPLOAD_FILE) {
+                processStatus = fileTransfer.readFile(buf, processStatus);
+                if (processStatus == ProcessStatus.WAIT_BYTE) {
+                    processStatus = getFilesList(ctx, processStatus);
+                }
             }
-
-            currentStatus = ProcessStatus.WAIT_BYTE;
         }
+        System.out.println(processStatus.toString());
         if (buf.readableBytes() == 0) {
             buf.release();
         }
     }
 
-    private void authClient(ByteBuf buf, ChannelHandlerContext ctx) throws IOException {
+    private ProcessStatus authClient(ByteBuf buf, ChannelHandlerContext ctx, ProcessStatus processStatus) throws IOException {
         LOG.debug("Client tries to log in...");
-        currentStatus = authUserUtil.handleAuthData(buf, currentStatus);
-        currentStatus = userService.authClient(authUserUtil.getLogin(), authUserUtil.getPassword(), currentStatus);
+        processStatus = authUserUtil.handleAuthData(buf, processStatus);
+        processStatus = userService.authClient(authUserUtil.getLogin(), authUserUtil.getPassword(), processStatus);
 
-        if (currentStatus == ProcessStatus.AUTH_SUCCESS) {
+        if (processStatus == ProcessStatus.AUTH_SUCCESS) {
             LOG.debug("Client " + authUserUtil.getLogin() + " logged in!");
             isAuth = true;
             userFolder = Paths.get(rootFolder.toString(), authUserUtil.getLogin());
             if (!Files.exists(userFolder)) {
                 Files.createDirectory(userFolder);
             }
-
+            fileTransfer.setCurrentFolder(userFolder.toString());
             ctx.writeAndFlush(authUserUtil.completeAuth());
+            processStatus = ProcessStatus.WAIT_BYTE;
         } else {
             LOG.debug("Client " + authUserUtil.getLogin() + " was unable to connect to the server!");
         }
+        return processStatus;
     }
 
-    private void getFilesList(ChannelHandlerContext ctx) {
+    private ProcessStatus getFilesList(ChannelHandlerContext ctx, ProcessStatus processStatus) {
         if (isAuth) {
             LOG.debug("Client tries to get files list...");
             String filesList = null;
@@ -114,14 +126,23 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
             fileTransfer.setCurrentFolder(userFolder.toString());
             ctx.writeAndFlush(fileTransfer.sendSomeMessage(filesList, Command.SEND_FILES_LIST));
             LOG.debug("Files list sent to client!");
+            processStatus = ProcessStatus.WAIT_BYTE;
         }
+        return processStatus;
     }
 
     private void sendFile(ByteBuf buf, ChannelHandlerContext ctx) {
-        currentStatus = fileTransfer.readFileName(buf);
-        if (currentStatus == ProcessStatus.READ_FILE_READY) {
+        processStatus = fileTransfer.readFileName(buf);
+        if (processStatus == ProcessStatus.READ_FILE_READY) {
             ctx.writeAndFlush(fileTransfer.sendFileParameters());
             fileTransfer.sendFile(ctx.channel());
         }
+        processStatus = ProcessStatus.WAIT_BYTE;
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOG.error("e = " + cause);
+        ctx.close();
     }
 }
