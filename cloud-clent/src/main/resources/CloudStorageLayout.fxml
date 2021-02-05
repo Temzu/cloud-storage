@@ -27,7 +27,7 @@
     </HBox>
 
     <HBox VBox.vgrow="ALWAYS">
-        <VBox spacing="5" HBox.hgrow="ALWAYS">
+        <VBox fx:id="serverSide" spacing="5" HBox.hgrow="ALWAYS">
 
             <ListView fx:id="serverFilesList" onMouseClicked="#filesListClicked" VBox.vgrow="ALWAYS" />
 
@@ -41,7 +41,7 @@
          </HBox.margin>
         </VBox>
 
-        <VBox spacing="5" HBox.hgrow="ALWAYS">
+        <VBox fx:id="clientSide" spacing="5" HBox.hgrow="ALWAYS">
             <TextField fx:id="clientPathField" editable="false" focusTraversable="false" />
             <ListView fx:id="clientFilesList" onMouseClicked="#filesListClicked" VBox.vgrow="ALWAYS" />
 

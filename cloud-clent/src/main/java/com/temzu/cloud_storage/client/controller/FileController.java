@@ -21,14 +21,6 @@ import java.util.stream.Collectors;
 
 public class FileController {
 
-    private Stage file;
-
-    @FXML
-    public Button btnOk;
-
-    @FXML
-    public TextField queryText;
-
     private Path clientRootPath;
     private ListView<FileInfo> clientList;
     private ListView<String> serverList;
@@ -45,9 +37,14 @@ public class FileController {
                             setText(null);
                             setStyle("");
                         } else {
-
+                            String formattedFileLength;
+                            long len = item.getLength() / 1024;
+                            if (len > 0) {
+                                formattedFileLength = String.format("%,d kb", len);
+                            } else {
+                                formattedFileLength = String.format("%,d byte", item.getLength());
+                            }
                             String formattedFilename = String.format("%-30s", item.getFileName());
-                            String formattedFileLength = String.format("%,d kb", item.getLength()/1024);
                             if (item.getLength() == -2L) {
                                 formattedFileLength = "";
                             }
@@ -130,24 +127,6 @@ public class FileController {
                 e.printStackTrace();
             }
         }
-//        if (file == null) {
-//            try {
-//                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/FileView.fxml"));
-//                Parent root = fxmlLoader.load();
-//                btnOk.setOnMouseClicked(e -> {
-//
-//                });
-//                file = new Stage();
-//                file.setTitle(title);
-//                file.setScene(new Scene(root));
-//                file.show();
-//                file.setOnCloseRequest(e -> {
-//                    file = null;
-//                });
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
     }
 
     public void setClientRootPath(Path clientRootPath) {

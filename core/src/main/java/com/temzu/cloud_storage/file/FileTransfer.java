@@ -1,5 +1,6 @@
 package com.temzu.cloud_storage.file;
 
+import com.temzu.cloud_storage.callback.CallBackProgress;
 import com.temzu.cloud_storage.callback.Callback;
 import com.temzu.cloud_storage.operation.Command;
 import com.temzu.cloud_storage.operation.ProcessStatus;
@@ -45,9 +46,10 @@ public class FileTransfer {
     private long countBytes;
     private int tempCount;
     private Callback getFileListCallBack;
-
     private Callback downloadFileCallback;
     private Callback deleteFileCallback;
+    private CallBackProgress progressBarCallback;
+
     public ByteBuf sendSomeMessage(String message, Command command) {
         LOG.debug("Send message: " + command.toString() + " " + message);
         byte[] bytesMessage = message.getBytes(StandardCharsets.UTF_8);
@@ -118,7 +120,6 @@ public class FileTransfer {
     public ProcessStatus readFileParameters(ByteBuf buf, ProcessStatus processStatus) {
         if (processStatus == ProcessStatus.START_DOWNLOAD_PROCESS) {
             System.out.println("Start download process");
-
             downloadFile = null;
             raf = null;
             fChannel = null;
@@ -139,11 +140,8 @@ public class FileTransfer {
             ByteBuffer bufRead = ByteBuffer.allocate(32000);
             int bytesRead = fChannel.read(bufRead);
             countBytes = countBytes + bytesRead;
-
             while (bytesRead != -1 && countBytes <= fileLength) {
-
                 answer = ByteBufAllocator.DEFAULT.directBuffer(32000);
-
                 bufRead.flip();
                 while(bufRead.hasRemaining()){
                     byte[] fileBytes = new byte[bytesRead];
@@ -154,6 +152,7 @@ public class FileTransfer {
                 bufRead.clear();
                 bytesRead = fChannel.read(bufRead);
                 countBytes = countBytes + bytesRead;
+                callProgressBar(countBytes, fileLength);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -164,7 +163,6 @@ public class FileTransfer {
                 e.printStackTrace();
             }
         }
-
     }
 
     public ProcessStatus readFile(ByteBuf buf, ProcessStatus processStatus) throws IOException {
@@ -182,6 +180,7 @@ public class FileTransfer {
                 tempCount = fChannel.write(buf.nioBuffer());
                 countBytes = countBytes + tempCount;
                 buf.readerIndex(buf.readerIndex() + tempCount);
+                callProgressBar(countBytes, fileLength);
             }
             if (countBytes == fileLength) {
                 if (downloadFileCallback != null) {
@@ -193,17 +192,10 @@ public class FileTransfer {
         }
         return processStatus;
     }
-
-    public void setCurrentFolder(String currentFolder) {
-        this.currentFolder = currentFolder;
-    }
-
-    public void setGetFileListCallBack(Callback getFileListCallBack) {
-        this.getFileListCallBack = getFileListCallBack;
-    }
-
-    public void setDownloadFileCallback(Callback downloadFileCallback) {
-        this.downloadFileCallback = downloadFileCallback;
+    private void callProgressBar(long current, long size){
+        if(progressBarCallback != null && size != 0){
+            progressBarCallback.call((double) current/size);
+        }
     }
 
     public ByteBuf requestUploadFile(String fileName) {
@@ -252,7 +244,23 @@ public class FileTransfer {
         return currentFilename;
     }
 
+    public void setCurrentFolder(String currentFolder) {
+        this.currentFolder = currentFolder;
+    }
+
+    public void setGetFileListCallBack(Callback getFileListCallBack) {
+        this.getFileListCallBack = getFileListCallBack;
+    }
+
+    public void setDownloadFileCallback(Callback downloadFileCallback) {
+        this.downloadFileCallback = downloadFileCallback;
+    }
+
     public String getNewFileName() {
         return newFileName;
+    }
+
+    public void setProgressBarCallback(CallBackProgress progressBarCallback) {
+        this.progressBarCallback = progressBarCallback;
     }
 }

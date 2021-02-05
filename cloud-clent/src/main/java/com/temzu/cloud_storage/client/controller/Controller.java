@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,13 @@ public class Controller implements Initializable {
     private AuthUserUtil authUserUtil;
     private Path currentFolder;
     private FileController fileController;
-    private ClientApp app;
+    private ProcessController processController;
+
+    @FXML
+    public VBox clientSide;
+
+    @FXML
+    public VBox serverSide;
 
     @FXML
     private Button btnLogin;
@@ -58,7 +65,6 @@ public class Controller implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         currentFolder = Paths.get(File.listRoots()[1].getAbsolutePath());
-
         fileController = new FileController();
         fileController.setClientRootPath(currentFolder);
         fileController.setClientList(clientFilesList);
@@ -127,19 +133,17 @@ public class Controller implements Initializable {
         fileTransfer.setDeleteFileCallback(args -> {
             Platform.runLater(this::getFileListServer);
         });
-    }
 
-    public void btnDeleteOnAction(ActionEvent actionEvent) {
-    }
-
-    public void btnRefreshOnAction(ActionEvent actionEvent) {
-    }
-
-    public void btnDownloadOnAction(ActionEvent actionEvent) {
-
+//        fileTransfer.setProgressBarCallback(arg -> {
+//            Platform.runLater(() -> {
+//                System.out.println("progress " + arg);
+//                processController.getProgressBar().setProgress(arg);
+//            });
+//        });
     }
 
     public void btnUploadOnAction(ActionEvent actionEvent) {
+//        processController = processController.openProgress("Download");
         fileTransfer.setCurrentFolder(currentFolder.toString());
         ByteBuf buff = fileTransfer.requestUploadFile(clientFilesList.getFocusModel().getFocusedItem().getFileName());
         if(buff == null){
@@ -147,15 +151,6 @@ public class Controller implements Initializable {
         }
         networkClient.getCurrentChannel().writeAndFlush(buff);
         new Thread(()->{fileTransfer.sendFile(networkClient.getCurrentChannel());}).start();
-    }
-
-    public void selectDiskOnAction(ActionEvent actionEvent) {
-    }
-
-    public void btnPathUpAction(ActionEvent actionEvent) {
-    }
-
-    public void btnRefreshClientOnAction(ActionEvent actionEvent) {
     }
 
     public void btnDeleteCloudOnAction(ActionEvent actionEvent) {
@@ -168,6 +163,9 @@ public class Controller implements Initializable {
     }
 
     public void btnDownloadFromServer(ActionEvent actionEvent) {
+//        processController = ProcessController.openProgress("Download");
+//        processController.getProgressBar().progressProperty().unbind();
+//        processController.getProgressBar().setProgress(0);
         fileTransfer.setCurrentFolder(currentFolder.toAbsolutePath().toString());
         String downLoadFile = serverFilesList.getFocusModel().getFocusedItem();
         networkClient.getCurrentChannel().writeAndFlush(fileTransfer.sendSomeMessage(downLoadFile, Command.DOWNLOAD_FILE));
@@ -185,20 +183,21 @@ public class Controller implements Initializable {
     }
 
     public void btnRenameCloudOnAction(ActionEvent actionEvent) {
+        serverSide.setDisable(true);
         String newName = fileController.serverRename("Rename server file");
         if (newName != null) {
             networkClient.getCurrentChannel()
                     .writeAndFlush(fileTransfer.sendSomeMessage(
                     serverFilesList.getFocusModel().getFocusedItem() + " " + newName, Command.RENAME_FILE));
         }
+        serverSide.setDisable(false);
     }
 
     public void btnRenameClientOnAction(ActionEvent actionEvent) {
+        clientSide.setDisable(true);
         fileController.clientRename("Rename own file");
         fileController.refresh(clientFilesList, clientPathField);
+        clientSide.setDisable(false);
     }
 
-    public void setApp(ClientApp app) {
-        this.app = app;
-    }
 }
