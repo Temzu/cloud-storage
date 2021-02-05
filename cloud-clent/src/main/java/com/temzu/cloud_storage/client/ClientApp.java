@@ -15,11 +15,11 @@ public class ClientApp extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(ClientApp.class);
 
     private Stage primaryStage;
-    private Stage processStage;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
+        System.out.println(getClass().getResource("/CloudStorageLayout.fxml"));
         Parent root = FXMLLoader.load(getClass().getResource("/CloudStorageLayout.fxml"));
         primaryStage.setTitle("Cloud storage");
         primaryStage.setScene(new Scene(root, 900, 500));
@@ -37,12 +37,4 @@ public class ClientApp extends Application {
         LOG.debug("Started client application.");
         launch(args);
     }
-
-    public void openProcessStage() throws IOException {
-        Parent root = FXMLLoader.load(getClass().getResource("/ProcessLayout.fxml"));
-        primaryStage.setTitle("Cloud storage");
-        primaryStage.setScene(new Scene(root, 300, 300));
-        primaryStage.show();
-    }
-
 }

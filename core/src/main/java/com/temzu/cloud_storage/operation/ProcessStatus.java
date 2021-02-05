@@ -20,7 +20,9 @@ public enum ProcessStatus {
     AUTH_READY,
     AUTH_NOT_READY,
     AUTH_SUCCESS,
-    AUTH_ERROR;
+    AUTH_ERROR,
+
+    RENAME_FILE_READY;
 
     public static ProcessStatus defineProcess(Command cmd) {
         switch (cmd) {

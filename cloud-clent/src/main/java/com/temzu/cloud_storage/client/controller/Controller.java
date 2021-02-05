@@ -1,5 +1,6 @@
 package com.temzu.cloud_storage.client.controller;
 
+import com.temzu.cloud_storage.client.ClientApp;
 import com.temzu.cloud_storage.client.network.NetworkClient;
 import com.temzu.cloud_storage.file.FileInfo;
 import com.temzu.cloud_storage.file.FileTransfer;
@@ -16,7 +17,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -32,6 +35,7 @@ public class Controller implements Initializable {
     private AuthUserUtil authUserUtil;
     private Path currentFolder;
     private FileController fileController;
+    private ClientApp app;
 
     @FXML
     private Button btnLogin;
@@ -55,7 +59,10 @@ public class Controller implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         currentFolder = Paths.get(File.listRoots()[1].getAbsolutePath());
 
-        fileController = new FileController(currentFolder);
+        fileController = new FileController();
+        fileController.setClientRootPath(currentFolder);
+        fileController.setClientList(clientFilesList);
+        fileController.setServerList(serverFilesList);
         fileController.fillClientCells(clientFilesList, clientPathField);
         networkClient = new NetworkClient("localhost", 8189);
         authUserUtil = networkClient.getAuthUserUtil();
@@ -87,6 +94,7 @@ public class Controller implements Initializable {
         if (networkClient == null) {
             return;
         }
+        System.out.println(login + " " + password);
         networkClient.getCurrentChannel().writeAndFlush(authUserUtil.singIn(login, password));
         LOG.debug("Attempt to authorize...");
     }
@@ -103,7 +111,7 @@ public class Controller implements Initializable {
         });
 
         fileTransfer.setGetFileListCallBack(args -> {
-            Platform.runLater(()->{
+            Platform.runLater(() -> {
                 List<String> filesList = (List<String>) args[0];
                 serverFilesList.getItems().clear();
                 serverFilesList.getItems().addAll(filesList);
@@ -116,6 +124,9 @@ public class Controller implements Initializable {
             });
         });
 
+        fileTransfer.setDeleteFileCallback(args -> {
+            Platform.runLater(this::getFileListServer);
+        });
     }
 
     public void btnDeleteOnAction(ActionEvent actionEvent) {
@@ -144,13 +155,12 @@ public class Controller implements Initializable {
     public void btnPathUpAction(ActionEvent actionEvent) {
     }
 
-    public void btnDeleteClientOnAction(ActionEvent actionEvent) {
-    }
-
     public void btnRefreshClientOnAction(ActionEvent actionEvent) {
     }
 
     public void btnDeleteCloudOnAction(ActionEvent actionEvent) {
+        String file = serverFilesList.getFocusModel().getFocusedItem();
+        networkClient.getCurrentChannel().writeAndFlush(fileTransfer.sendSomeMessage(file, Command.DELETE_FILE));
     }
 
     public void filesListClicked(MouseEvent mouseEvent) {
@@ -160,7 +170,35 @@ public class Controller implements Initializable {
     public void btnDownloadFromServer(ActionEvent actionEvent) {
         fileTransfer.setCurrentFolder(currentFolder.toAbsolutePath().toString());
         String downLoadFile = serverFilesList.getFocusModel().getFocusedItem();
-        System.out.println(downLoadFile);
         networkClient.getCurrentChannel().writeAndFlush(fileTransfer.sendSomeMessage(downLoadFile, Command.DOWNLOAD_FILE));
+    }
+
+    public void btnDeleteClientOnAction(ActionEvent actionEvent) {
+        String file = clientFilesList.getFocusModel().getFocusedItem().getFileName();
+        Path deleteFile = Paths.get(currentFolder.toString(), file);
+        try {
+            Files.delete(deleteFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        fileController.refresh(clientFilesList, clientPathField);
+    }
+
+    public void btnRenameCloudOnAction(ActionEvent actionEvent) {
+        String newName = fileController.serverRename("Rename server file");
+        if (newName != null) {
+            networkClient.getCurrentChannel()
+                    .writeAndFlush(fileTransfer.sendSomeMessage(
+                    serverFilesList.getFocusModel().getFocusedItem() + " " + newName, Command.RENAME_FILE));
+        }
+    }
+
+    public void btnRenameClientOnAction(ActionEvent actionEvent) {
+        fileController.clientRename("Rename own file");
+        fileController.refresh(clientFilesList, clientPathField);
+    }
+
+    public void setApp(ClientApp app) {
+        this.app = app;
     }
 }

@@ -33,7 +33,7 @@
 
             <HBox spacing="5">
                 <Button fx:id="btnDownload" maxWidth="Infinity" onAction="#btnDownloadFromServer" text="Download" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
-                <Button fx:id="btnRename" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Rename" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnRename" maxWidth="Infinity" onAction="#btnRenameCloudOnAction" text="Rename" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
                 <Button fx:id="btnCloudDelete" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Delete" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
             </HBox>
          <HBox.margin>
@@ -47,7 +47,7 @@
 
             <HBox spacing="5">
                 <Button fx:id="btnUpload" maxWidth="Infinity" onAction="#btnUploadOnAction" text="Upload" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
-                <Button fx:id="btnClientRename" maxWidth="Infinity" onAction="#btnDeleteCloudOnAction" text="Rename" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnClientRename" maxWidth="Infinity" onAction="#btnRenameClientOnAction" text="Rename" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
                 <Button fx:id="btnClientFileSystemDelete" maxWidth="Infinity" onAction="#btnDeleteClientOnAction" text="Delete" HBox.hgrow="ALWAYS" />
             </HBox>
          <HBox.margin>

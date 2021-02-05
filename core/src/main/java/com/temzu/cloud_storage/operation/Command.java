@@ -19,7 +19,7 @@ public enum Command {
 
     DELETE_FILE((byte) 200),
 
-    RENAME_FILE((byte) 250);
+    RENAME_FILE((byte) 210);
 
     private byte operationCode;
 

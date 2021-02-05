@@ -66,14 +66,19 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
                         processStatus = authClient(buf, ctx, processStatus);
                         break;
                     case GET_FILES_LIST:
-                        processStatus = getFilesList(ctx, processStatus);
+                        getFilesList(ctx);
                         break;
                     case DOWNLOAD_FILE:
                         sendFile(buf, ctx);
                         break;
                     case UPLOAD_FILE:
-                        System.out.println("Upload: " + processStatus.toString() + " " + currentCommand.toString());
                         processStatus = fileTransfer.readFileParameters(buf, processStatus);
+                        break;
+                    case DELETE_FILE:
+                        deleteFile(buf, ctx);
+                        break;
+                    case RENAME_FILE:
+                        renameFile(buf, ctx);
                         break;
                 }
             }
@@ -81,11 +86,10 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
             if (currentCommand == Command.UPLOAD_FILE) {
                 processStatus = fileTransfer.readFile(buf, processStatus);
                 if (processStatus == ProcessStatus.WAIT_BYTE) {
-                    processStatus = getFilesList(ctx, processStatus);
+                    getFilesList(ctx);
                 }
             }
         }
-        System.out.println(processStatus.toString());
         if (buf.readableBytes() == 0) {
             buf.release();
         }
@@ -105,14 +109,14 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
             }
             fileTransfer.setCurrentFolder(userFolder.toString());
             ctx.writeAndFlush(authUserUtil.completeAuth());
-            processStatus = ProcessStatus.WAIT_BYTE;
         } else {
             LOG.debug("Client " + authUserUtil.getLogin() + " was unable to connect to the server!");
         }
+        processStatus = ProcessStatus.WAIT_BYTE;
         return processStatus;
     }
 
-    private ProcessStatus getFilesList(ChannelHandlerContext ctx, ProcessStatus processStatus) {
+    private void getFilesList(ChannelHandlerContext ctx) {
         if (isAuth) {
             LOG.debug("Client tries to get files list...");
             String filesList = null;
@@ -126,9 +130,8 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
             fileTransfer.setCurrentFolder(userFolder.toString());
             ctx.writeAndFlush(fileTransfer.sendSomeMessage(filesList, Command.SEND_FILES_LIST));
             LOG.debug("Files list sent to client!");
-            processStatus = ProcessStatus.WAIT_BYTE;
         }
-        return processStatus;
+        processStatus = ProcessStatus.WAIT_BYTE;
     }
 
     private void sendFile(ByteBuf buf, ChannelHandlerContext ctx) {
@@ -138,6 +141,33 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
             fileTransfer.sendFile(ctx.channel());
         }
         processStatus = ProcessStatus.WAIT_BYTE;
+    }
+
+    private void deleteFile(ByteBuf buf, ChannelHandlerContext ctx) {
+        processStatus = fileTransfer.readFileName(buf);
+        if (processStatus == ProcessStatus.READ_FILE_READY) {
+            Path file = Paths.get(rootFolder.toString(), authUserUtil.getLogin(), fileTransfer.getCurrentFilename());
+            try {
+                Files.delete(file);
+                processStatus = ProcessStatus.WAIT_BYTE;
+                getFilesList(ctx);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void renameFile(ByteBuf buf, ChannelHandlerContext ctx) {
+        processStatus = fileTransfer.renameFile(buf);
+        if (processStatus == ProcessStatus.RENAME_FILE_READY) {
+            try {
+                Path file = Paths.get(rootFolder.toString(), authUserUtil.getLogin(), fileTransfer.getCurrentFilename());
+                Files.move(file, file.resolveSibling(fileTransfer.getNewFileName()));
+            } catch (IOException e) {
+                LOG.debug("e = " + e);
+            }
+            getFilesList(ctx);
+        }
     }
 
     @Override

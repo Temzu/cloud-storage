@@ -1,25 +1,37 @@
 package com.temzu.cloud_storage.client.controller;
 
 import com.temzu.cloud_storage.file.FileInfo;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
 import javafx.util.Callback;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FileController {
-    private Path clientRootPath;
 
-    public FileController(Path clientRootPath) {
-        this.clientRootPath = clientRootPath;
-    }
+    private Stage file;
+
+    @FXML
+    public Button btnOk;
+
+    @FXML
+    public TextField queryText;
+
+    private Path clientRootPath;
+    private ListView<FileInfo> clientList;
+    private ListView<String> serverList;
 
     public void fillClientCells(ListView<FileInfo> filesList, TextField pathField) {
         filesList.setCellFactory(new Callback<ListView<FileInfo>, ListCell<FileInfo>>() {
@@ -101,5 +113,62 @@ public class FileController {
             }
         }
         return clientRootPath;
+    }
+
+    public void clientRename(String rename) {
+        TextInputDialog dialog = new TextInputDialog(clientList.getSelectionModel().getSelectedItem().getFileName());
+        dialog.setTitle(rename);
+        dialog.setHeaderText(null);
+        dialog.setGraphic(null);
+        dialog.setContentText("New name");
+        Optional<String> res = dialog.showAndWait();
+        if (res.isPresent()) {
+            try {
+                Path paths = Paths.get(clientRootPath.toString(), clientList.getSelectionModel().getSelectedItem().getFileName());
+                Files.move(paths, paths.resolveSibling(res.get()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+//        if (file == null) {
+//            try {
+//                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/FileView.fxml"));
+//                Parent root = fxmlLoader.load();
+//                btnOk.setOnMouseClicked(e -> {
+//
+//                });
+//                file = new Stage();
+//                file.setTitle(title);
+//                file.setScene(new Scene(root));
+//                file.show();
+//                file.setOnCloseRequest(e -> {
+//                    file = null;
+//                });
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        }
+    }
+
+    public void setClientRootPath(Path clientRootPath) {
+        this.clientRootPath = clientRootPath;
+    }
+
+    public void setClientList(ListView<FileInfo> clientList) {
+        this.clientList = clientList;
+    }
+
+    public void setServerList(ListView<String> serverList) {
+        this.serverList = serverList;
+    }
+
+    public String serverRename(String rename) {
+        TextInputDialog dialog = new TextInputDialog(serverList.getSelectionModel().getSelectedItem());
+        dialog.setTitle(rename);
+        dialog.setHeaderText(null);
+        dialog.setGraphic(null);
+        dialog.setContentText("New name");
+        Optional<String> res = dialog.showAndWait();
+        return res.orElse(null);
     }
 }

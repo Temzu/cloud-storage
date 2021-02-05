@@ -34,17 +34,20 @@ public class FileTransfer {
 
 
     private String currentFolder;
+
     private String currentFilename;
+    private String newFileName;
+
     private Path downloadFile;
     private Path uploadFile;
     private RandomAccessFile raf;
     private FileChannel fChannel;
     private long countBytes;
     private int tempCount;
-
     private Callback getFileListCallBack;
-    private Callback downloadFileCallback;
 
+    private Callback downloadFileCallback;
+    private Callback deleteFileCallback;
     public ByteBuf sendSomeMessage(String message, Command command) {
         LOG.debug("Send message: " + command.toString() + " " + message);
         byte[] bytesMessage = message.getBytes(StandardCharsets.UTF_8);
@@ -228,5 +231,28 @@ public class FileTransfer {
             return null;
         }
         return buff;
+    }
+
+    public ProcessStatus renameFile(ByteBuf buf) {
+        int len = buf.readInt();
+        byte[] filesByte = new byte[len];
+        buf.readBytes(filesByte);
+        String str = new String(filesByte, StandardCharsets.UTF_8);
+        String[] strings = str.split("\\s");
+        currentFilename = strings[0];
+        newFileName = strings[1];
+        return ProcessStatus.RENAME_FILE_READY;
+    }
+
+    public void setDeleteFileCallback(Callback deleteFileCallback) {
+        this.deleteFileCallback = deleteFileCallback;
+    }
+
+    public String getCurrentFilename() {
+        return currentFilename;
+    }
+
+    public String getNewFileName() {
+        return newFileName;
     }
 }
