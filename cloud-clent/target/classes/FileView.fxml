@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox prefHeight="100.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/11.0.1"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.temzu.cloud_storage.client.controller.FileController">
+      <TextField fx:id="queryText" alignment="CENTER">
+         <VBox.margin>
+            <Insets bottom="30.0" left="30.0" right="30.0" top="40.0" />
+         </VBox.margin>
+      </TextField>
+    <AnchorPane>
+        <Button fx:id="btnOk" mnemonicParsing="false" prefWidth="50" text="Ok" AnchorPane.rightAnchor="10" AnchorPane.bottomAnchor="10"/>
+    </AnchorPane>
+</VBox>
