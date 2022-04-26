@@ -11,5 +11,11 @@
         <module name="cloud-clent" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="cloud-clent" target="1.8" />
+      <module name="cloud-server" target="1.8" />
+      <module name="cloud-storage" target="1.8" />
+      <module name="core" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>
